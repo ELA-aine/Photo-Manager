@@ -1,0 +1,94 @@
+import SwiftUI
+import MapKit
+
+// MARK: - Photo Model
+struct Photo: Identifiable, Codable {
+    let id: UUID
+    var name: String
+    var location: String
+    var coordinate: CLLocationCoordinate2D?
+    var category: String
+    var imgUrl: URL?
+    var date: Date
+}
+
+// MARK: - PhotoUploadView (Handles photo upload with location input)
+struct PhotoUploadView: View {
+    @State private var name: String = ""
+    @State private var location: String = ""
+    @State private var category: String = ""
+    @State private var selectedImage: NSImage? = nil
+    @State private var coordinate: CLLocationCoordinate2D? = nil
+
+    var onUpload: (Photo) -> Void
+
+    var body: some View {
+        VStack(spacing: 16) {
+            TextField("Photo Name", text: $name)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+
+            TextField("Location (e.g., New York, NY)", text: $location)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+
+            TextField("Category", text: $category)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+
+            Button("Upload Photo") {
+                geocodeLocation(location) { coordinate in
+                    let newPhoto = Photo(
+                        id: UUID(),
+                        name: name,
+                        location: location,
+                        coordinate: coordinate,
+                        category: category,
+                        imgUrl: nil,
+                        date: Date()
+                    )
+                    onUpload(newPhoto)
+                    clearFields()
+                }
+            }
+            .buttonStyle(DefaultButtonStyle())
+        }
+        .padding()
+    }
+
+    private func clearFields() {
+        name = ""
+        location = ""
+        category = ""
+    }
+
+    private func geocodeLocation(_ address: String, completion: @escaping (CLLocationCoordinate2D?) -> Void) {
+        let geocoder = CLGeocoder()
+        geocoder.geocodeAddressString(address) { placemarks, error in
+            completion(placemarks?.first?.location?.coordinate)
+        }
+    }
+}
+
+// MARK: - PhotoMapView (Displays photos on a map with markers)
+struct PhotoMapView: View {
+    var photos: [Photo]
+    @State private var region = MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194), // Default to San Francisco
+        span: MKCoordinateSpan(latitudeDelta: 20, longitudeDelta: 20)
+    )
+
+    var body: some View {
+        Map(coordinateRegion: $region, annotationItems: photos.compactMap { $0.coordinate != nil ? $0 : nil }) { photo in
+            MapAnnotation(coordinate: photo.coordinate ?? CLLocationCoordinate2D()) {
+                VStack {
+                    Circle()
+                        .fill(Color.red)
+                        .frame(width: 12, height: 12)
+                    Text(photo.name)
+                        .font(.caption2)
+                        .foregroundColor(.black)
+                }
+            }
+        }
+        .navigationTitle("Photo Locations")
+    }
+}
+
