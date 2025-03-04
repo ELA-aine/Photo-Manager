@@ -10,7 +10,7 @@ import GoogleGenerativeAI
 
  
 struct ChatView: View {
-    let model = GenerativeModel(name: "gemini-pro", apiKey: "AIzaSyBagcrpbc69KMshfAJu7Aq53_YXQOOX8T4")
+    let model = GenerativeModel(name: "gemini-pro", apiKey: "")
     @State var textInput = ""
     @State var aiResponse = "Hello, what can i help you"
     
